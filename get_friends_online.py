@@ -1,32 +1,6 @@
-import vk_api
 import requests
 import sys
-import json
-
-
-def json_data_check(json_data, keys):
-    if json_data == {}:
-        for key in keys:
-            print('Input %s:' % key)
-            json_data[key] = input()
-    return json_data
-
-
-def read_json(filename):
-    try:
-        with open(filename, 'r') as read_file:
-            json_data = json.load(read_file)
-    except FileNotFoundError:
-        return {}
-    except json.decoder.JSONDecodeError:
-        return {}
-    return json_data
-
-
-def get_auth_data_for_token():
-    app_auth_data = read_json('auth_data.json')
-    app_auth_data = json_data_check(app_auth_data, ['app_id', 'secure_key'])
-    return app_auth_data
+from vk_auth import get_vk_session
 
 
 def check_args():
@@ -43,16 +17,10 @@ def check_args():
 
 def get_friends_online_list(id_for_searching, api):
     if id_for_searching:
-        online_friends = api.friends.getOnline(user_id=id_for_searching, online_mobile=1, v='5.63')
+        online_friends = api.friends.getOnline(user_id=id_for_searching, online_mobile=1, order='hints', v='5.63')
     else:
-        online_friends = api.friends.getOnline(online_mobile=1, v='5.63')
+        online_friends = api.friends.getOnline(online_mobile=1, order='hints', v='5.63')
     return online_friends
-
-
-def captcha_handler(captcha):
-    key = input("Enter captcha code {0}: ".format(captcha.get_url())).strip()
-    # Пробуем снова отправить запрос с капчей
-    return captcha.try_again(key)
 
 
 def make_request_to_vk(method, parameters):
@@ -102,15 +70,13 @@ def online_friends_output(online_friends_ids, token):
             print('\t', 'Nobody(')
         else:
             for friend in online_friends[mode]:
-                print('\t', friend['first_name'], friend['last_name'], '\t',  'https://vk.com/id%d' % friend['id'])
+                print('\t', friend['first_name'], friend['last_name'], '\t:\t',  'https://vk.com/id%d' % friend['id'])
+        print()
 
 
 if __name__ == '__main__':
     id_for_searching = check_args()
-    auth_data = get_auth_data_for_token()
-    vk_session = vk_api.VkApi(app_id=auth_data['app_id'], login=auth_data['login'], password=auth_data['password'],
-                              scope='2', token=auth_data['service_token'], captcha_handler=captcha_handler,
-                              api_version='5.63')
+    vk_session = get_vk_session('auth_data.json', 2)
     vk_session.auth()
     vk = vk_session.get_api()
     founded_friends_ids = get_friends_online_list(id_for_searching, vk)
