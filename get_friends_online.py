@@ -91,15 +91,18 @@ def online_friends_output(online_friends_ids, token):
         response = requests.get(url=url_for_request).json()
         online_friends[mode] = response['response']
 
-    for mode in online_friends:
+    for mode in sorted(online_friends):
         if mode == 'online':
             print('Online:')
         elif mode == 'online_mobile':
             print('Online from mobile:')
         else:
             print('Something else:')
-        for friend in online_friends[mode]:
-            print(friend['first_name'], friend['last_name'], 'https://vk.com/id%d' % friend['id'])
+        if len(online_friends[mode]) == 0:
+            print('\t', 'Nobody(')
+        else:
+            for friend in online_friends[mode]:
+                print('\t', friend['first_name'], friend['last_name'], '\t',  'https://vk.com/id%d' % friend['id'])
 
 
 if __name__ == '__main__':
